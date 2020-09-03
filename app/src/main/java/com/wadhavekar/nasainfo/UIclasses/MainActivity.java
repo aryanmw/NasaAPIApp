@@ -140,6 +140,11 @@ public class MainActivity extends AppCompatActivity {
                     startActivity(intent);
                     break;
 
+                case R.id.nav_fav:
+                    Intent intent1 = new Intent(MainActivity.this,Favourites.class);
+                    startActivity(intent1);
+                    break;
+
 
 
             }

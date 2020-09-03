@@ -81,6 +81,11 @@ public class AssetImage extends AppCompatActivity {
                     startActivity(intent1);
                     break;
 
+                case R.id.nav_fav:
+                    Intent intent2 = new Intent(AssetImage.this,Favourites.class);
+                    startActivity(intent2);
+                    break;
+
 
             }
             return true;

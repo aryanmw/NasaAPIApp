@@ -10,37 +10,39 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.wadhavekar.nasainfo.ModelObjects.SearchEndPoint.Items;
 import com.wadhavekar.nasainfo.R;
 
 import java.util.List;
 
-public class SearchRecyclerViewAdapter extends RecyclerView.Adapter<SearchRecyclerViewAdapter.ViewHolder> {
-    private Context context;
-    private List<Items> itemList;
+public class FavListAdapter extends RecyclerView.Adapter<FavListAdapter.ViewHolder> {
 
-    public SearchRecyclerViewAdapter(Context context, List<Items> data) {
-        this.context = context;
-        this.itemList = data;
+    Context mContext;
+    List<FavouritesObject> favList;
+
+    public FavListAdapter(Context mContext, List<FavouritesObject> favList) {
+        this.mContext = mContext;
+        this.favList = favList;
     }
 
     @NonNull
     @Override
-    public SearchRecyclerViewAdapter.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+    public FavListAdapter.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.row_layout,parent,false);
 
         return new ViewHolder(view);
     }
 
     @Override
-    public void onBindViewHolder(@NonNull SearchRecyclerViewAdapter.ViewHolder holder, int position) {
-        holder.title.setText(itemList.get(position).getData().get(0).getTitle());
+    public void onBindViewHolder(@NonNull FavListAdapter.ViewHolder holder, int position) {
+        holder.title.setText(favList.get(position).getTitle());
     }
 
     @Override
     public int getItemCount() {
-        return itemList.size();
+        return favList.size();
     }
+
+
 
     public class ViewHolder extends RecyclerView.ViewHolder{
         private TextView title;
@@ -56,11 +58,11 @@ public class SearchRecyclerViewAdapter extends RecyclerView.Adapter<SearchRecycl
                 public void onClick(View view) {
                     int pos = getAdapterPosition();
                     if (pos != RecyclerView.NO_POSITION){
-                        String fr = itemList.get(pos).getData().get(0).getNasaId();
-                        Intent intent = new Intent(context, AssetImage.class);
-                        intent.putExtra("nasa_id",fr);
-                        intent.putExtra("title", itemList.get(pos).getData().get(0).getTitle());
-                        context.startActivity(intent);
+                        String fr = favList.get(pos).getTitle();
+                        Intent intent = new Intent(mContext, APOD.class);
+                        intent.putExtra("title",fr);
+                        intent.putExtra("date", favList.get(pos).getDate());
+                        mContext.startActivity(intent);
                         //Toast.makeText(context, "You clicked "+fr, Toast.LENGTH_SHORT).show();
                     }
                 }

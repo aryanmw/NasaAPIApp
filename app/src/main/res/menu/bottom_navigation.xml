@@ -14,4 +14,10 @@
         android:icon="@drawable/ic_search_black_24dp"
         android:iconTint="#EEEEED"/>
 
+    <item
+        android:id="@+id/nav_fav"
+        android:title="Favourites"
+        android:icon="@drawable/ic_favorite_black_24dp"
+        android:iconTint="#eeeeed"/>
+
 </menu>

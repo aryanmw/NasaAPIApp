@@ -1,12 +1,14 @@
 package com.wadhavekar.nasainfo.UIclasses;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.cardview.widget.CardView;
 import androidx.fragment.app.DialogFragment;
 
 import android.app.DatePickerDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.database.Cursor;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
@@ -17,6 +19,7 @@ import android.webkit.WebView;
 import android.widget.Button;
 import android.widget.DatePicker;
 import android.widget.ImageView;
+import android.widget.ListView;
 import android.widget.MediaController;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
@@ -26,6 +29,7 @@ import com.bumptech.glide.Glide;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.jakewharton.picasso.OkHttp3Downloader;
 import com.squareup.picasso.Picasso;
+import com.wadhavekar.nasainfo.DatabaseHandler.DatabaseManager;
 import com.wadhavekar.nasainfo.ModelObjects.APODEndPoint.APODResponse;
 import com.wadhavekar.nasainfo.R;
 import com.wadhavekar.nasainfo.api.ServiceAPOD;
@@ -52,11 +56,17 @@ public class APOD extends AppCompatActivity implements DatePickerDialog.OnDateSe
     WebView videoUrl;
     MediaController mediaController;
     RelativeLayout open;
+    DatabaseManager db;
+    CardView addToFavs,unfav;
+    String url;
+    String dateSet;
 
     private static final String API_KEY = "HlLkMF7B0nLwQ1LUOeIBhYxKzbnXyPbMikdBd8jH";
 
     public static final String SHARED_PREF = "APOD";
     public static final String SET_DATE = "Set Date";
+
+
 
 
 
@@ -68,21 +78,62 @@ public class APOD extends AppCompatActivity implements DatePickerDialog.OnDateSe
         urlAPOD = findViewById(R.id.iv_url);
         open = findViewById(R.id.layout_open);
         tvDate = findViewById(R.id.tv_date);
-        getAPOD = findViewById(R.id.button_getAPOD);
+        //getAPOD = findViewById(R.id.button_getAPOD);
         videoUrl = findViewById(R.id.vv_video);
         videoUrl.getSettings().setJavaScriptEnabled(true);
         videoUrl.setWebChromeClient(new WebChromeClient());
         BottomNavigationView bottomNav = findViewById(R.id.bottom_navigation);
         bottomNav.setOnNavigationItemSelectedListener(navListener);
+        db= new DatabaseManager(APOD.this);
+        addToFavs = findViewById(R.id.cv_addToFavs);
+        unfav = findViewById(R.id.cv_unFav);
+
 
         DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         LocalDateTime now = LocalDateTime.now();
 
         tvDate.setText(dtf.format(now));
 
+        if (!checkEntryInDatabase(tvDate.getText().toString())){
+            addToFavs.setVisibility(View.INVISIBLE);
+            unfav.setVisibility(View.VISIBLE);
+        }
+
+        addToFavs.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                db.addData(tvDate.getText().toString(),url,title.getText().toString());
+                addToFavs.setVisibility(View.INVISIBLE);
+                unfav.setVisibility(View.VISIBLE);
+                Toast.makeText(APOD.this, "APOD has been added to favourites!", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        unfav.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                unfav.setVisibility(View.INVISIBLE);
+                addToFavs.setVisibility(View.VISIBLE);
+                db.deleteFav(tvDate.getText().toString());
+                Toast.makeText(APOD.this, "APOD has been removed from favourites!", Toast.LENGTH_SHORT).show();
+
+            }
+        });
+
+        Bundle extras = getIntent().getExtras();
+        if (extras != null){
+            dateSet = extras.getString("date");
+            tvDate.setText(dateSet);
+        }
+        else{
+            dateSet = tvDate.getText().toString();
+        }
+
+
+
         if (checkConnection()){
             title.setText("");
-            loadJSON(tvDate.getText().toString());
+            loadJSON(dateSet);
         }
         else{
             title.setText("Please check your connection :(");
@@ -107,15 +158,15 @@ public class APOD extends AppCompatActivity implements DatePickerDialog.OnDateSe
             }
         });
 
-        getAPOD.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-
-
-
-
-            }
-        });
+//        getAPOD.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View view) {
+//
+//
+//
+//
+//            }
+//        });
 
 
     }
@@ -145,6 +196,14 @@ public class APOD extends AppCompatActivity implements DatePickerDialog.OnDateSe
         if (checkConnection()){
             title.setText("");
             loadJSON(date);
+            if (checkEntryInDatabase(date)){
+                addToFavs.setVisibility(View.VISIBLE);
+                unfav.setVisibility(View.INVISIBLE);
+            }
+            else{
+                addToFavs.setVisibility(View.INVISIBLE);
+                unfav.setVisibility(View.VISIBLE);
+            }
         }
         else{
             title.setText("Please check your connection :(");
@@ -164,6 +223,11 @@ public class APOD extends AppCompatActivity implements DatePickerDialog.OnDateSe
                     startActivity(intent);
                     break;
 
+                case R.id.nav_fav:
+                    Intent intent1 = new Intent(APOD.this,Favourites.class);
+                    startActivity(intent1);
+                    break;
+
 
             }
             return true;
@@ -179,7 +243,7 @@ public class APOD extends AppCompatActivity implements DatePickerDialog.OnDateSe
             public void onResponse(Call<APODResponse> call, Response<APODResponse> responseAPOD) {
                 String apodTitle = responseAPOD.body().getTitle();
                 title.setText(apodTitle);
-                String url = responseAPOD.body().getUrl();
+                url = responseAPOD.body().getUrl();
                 if (responseAPOD.body().getMediaType().equals("video")){
                     videoUrl.setVisibility(View.VISIBLE);
                     urlAPOD.setVisibility(View.INVISIBLE);
@@ -189,10 +253,10 @@ public class APOD extends AppCompatActivity implements DatePickerDialog.OnDateSe
                 else {
                     videoUrl.setVisibility(View.INVISIBLE);
                     urlAPOD.setVisibility(View.VISIBLE);
-//                            Picasso.Builder builder = new Picasso.Builder(getApplicationContext())
-//                                    .downloader(new OkHttp3Downloader(getApplicationContext()));
-//                            builder.build().load(url).into(urlAPOD);
-                    Glide.with(APOD.this).load(url).placeholder(R.drawable.progress_animation).into(urlAPOD);
+                            Picasso.Builder builder = new Picasso.Builder(getApplicationContext())
+                                    .downloader(new OkHttp3Downloader(getApplicationContext()));
+                            builder.build().load(url).placeholder(R.drawable.progress_animation).into(urlAPOD);
+                    //Glide.with(APOD.this).load(url).placeholder(R.drawable.progress_animation).into(urlAPOD);
                 }
             }
 
@@ -211,5 +275,27 @@ public class APOD extends AppCompatActivity implements DatePickerDialog.OnDateSe
         } else {
             return false;
         }
+    }
+
+    private boolean checkEntryInDatabase(String date){
+        Cursor data = db.retrieveData();
+        int numRows = data.getCount();
+        boolean canAdd = true;
+        if (numRows == 0){
+            //Toast.makeText(this, "No entries added yet", Toast.LENGTH_SHORT).show();
+            canAdd = true;
+
+        }
+        else{
+            while (data.moveToNext()){
+                if (date.equals(data.getString(0))){
+                    canAdd = false;
+                    break;
+                }
+            }
+
+        }
+        return canAdd;
+
     }
 }

@@ -14,6 +14,7 @@ import androidx.fragment.app.DialogFragment;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.Locale;
 
 import static com.wadhavekar.nasainfo.UIclasses.APOD.SET_DATE;
@@ -43,6 +44,10 @@ public class DatePickerFragment extends DialogFragment  {
         int day = c.get(Calendar.DAY_OF_MONTH);
         DatePickerDialog dialog = new DatePickerDialog(getActivity(),(DatePickerDialog.OnDateSetListener) getActivity(),year,month,day);
         dialog.getDatePicker().setMaxDate(System.currentTimeMillis());
+        c.set(Calendar.YEAR,1995);
+        c.set(Calendar.MONTH,5);
+        c.set(Calendar.DAY_OF_MONTH,16);
+        dialog.getDatePicker().setMinDate(c.getTimeInMillis());
 
 
         return dialog;
